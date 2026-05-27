@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>L'IA, tout simplement</title>
+
+<!-- ===========================================
+     POLICES (Google Fonts) — jamais de police système
+     Fredoka One : tous les titres (chunky, storybook)
+     Quicksand   : tout le texte courant
+     =========================================== -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+/* ===========================================
+   VARIABLES DE THÈME (Daisy Days — jardin ensoleillé)
+   Modifiez ces valeurs pour changer tout le look.
+   =========================================== */
+:root{
+  /* Palette pastel */
+  --cream:#F5F0E6; --turquoise:#7ECDC0; --pink:#F7C8D4; --butter:#FDE68A;
+  --mint:#A8E6CF; --lavender:#D4A5E8; --peach:#FFCBA4; --sky:#A8D8F0;
+  --coral:#F8635F; --ink:#2D2D2D; --muted:#6B6B6B; --white:#FFFFFF;
+
+  /* Typo (taille au format 1920×1080) */
+  --font-display:'Fredoka One', cursive;
+  --font-body:'Quicksand', sans-serif;
+
+  /* Élévation : ombre dure décalée, sans flou */
+  --shadow:6px 6px 0 var(--ink);
+  --shadow-sm:4px 4px 0 var(--ink);
+  --border:3px solid var(--ink);
+
+  /* Animation : easing rebondissant (playful) */
+  --ease:cubic-bezier(.34,1.56,.64,1);
+
+  --stage-bg:#241f1a;
+}
+
+*{margin:0;padding:0;box-sizing:border-box;}
+
+/* ===========================================
+   SCÈNE FIXE 16:9 (1920×1080) — base obligatoire
+   =========================================== */
+html,body{width:100%;height:100%;margin:0;overflow:hidden;background:var(--stage-bg);}
+.deck-viewport{position:fixed;inset:0;overflow:hidden;background:var(--stage-bg);}
+.deck-stage{position:absolute;left:0;top:0;width:1920px;height:1080px;overflow:hidden;
+  transform-origin:0 0;background:var(--cream);}
+
+.slide{
+  position:absolute;inset:0;width:1920px;height:1080px;overflow:hidden;
+  visibility:hidden;opacity:0;pointer-events:none;
+  background:var(--cream);
+  display:flex;flex-direction:column;justify-content:center;align-items:center;
+  padding:70px 120px;box-sizing:border-box;
+  font-family:var(--font-body);color:var(--ink);
+}
+.slide.active,.slide.visible{visibility:visible;opacity:1;pointer-events:auto;z-index:1;}
+img,video,canvas,svg{max-width:100%;max-height:100%;}
+
+/* Surfaces pastel par slide (personnalité tonale) */
+.bg-cream{background:var(--cream);}
+.bg-turquoise{background:var(--turquoise);}
+.bg-pink{background:var(--pink);}
+.bg-butter{background:var(--butter);}
+.bg-mint{background:var(--mint);}
+.bg-lavender{background:var(--lavender);}
+.bg-peach{background:var(--peach);}
+.bg-sky{background:var(--sky);}
+
+/* ===========================================
+   TYPOGRAPHIE
+   =========================================== */
+.display{font-family:var(--font-display);font-size:168px;line-height:.98;letter-spacing:.01em;}
+.headline{font-family:var(--font-display);font-size:96px;line-height:1.04;letter-spacing:.01em;text-align:center;}
+.title{font-family:var(--font-display);font-size:54px;line-height:1.12;}
+.subtitle{font-family:var(--font-display);font-size:42px;line-height:1.15;}
+.lead{font-size:40px;font-weight:600;line-height:1.4;color:var(--muted);text-align:center;}
+.body{font-size:30px;font-weight:500;line-height:1.55;}
+.body-strong{font-size:32px;font-weight:600;line-height:1.5;}
+.meta{font-size:24px;font-weight:600;line-height:1.45;color:var(--muted);}
+
+/* Titres sur surfaces saturées : blanc + ombre de texte charcoal */
+.on-bold{color:var(--white);text-shadow:3px 3px 0 var(--ink);}
+.on-soft{color:var(--ink);text-shadow:3px 3px 0 rgba(0,0,0,.18);}
+.hl{color:var(--coral);}
+
+/* ===========================================
+   COMPOSANTS
+   =========================================== */
+.badge{
+  display:inline-flex;align-items:center;gap:12px;
+  font-family:var(--font-display);font-size:30px;color:var(--ink);
+  background:var(--butter);padding:14px 36px;border-radius:50px;
+  border:var(--border);box-shadow:var(--shadow-sm);
+}
+.card{
+  background:var(--white);border:var(--border);border-radius:20px;
+  box-shadow:var(--shadow);padding:36px 40px;
+}
+.card-lg{border-radius:28px;}
+
+/* Pastille ronde marqueur / icône */
+.dot{
+  width:96px;height:96px;border-radius:50%;border:var(--border);
+  box-shadow:var(--shadow-sm);display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-display);font-size:46px;color:var(--white);flex:0 0 auto;
+}
+.icon{
+  width:84px;height:84px;border-radius:50%;border:var(--border);
+  display:flex;align-items:center;justify-content:center;font-size:42px;flex:0 0 auto;
+  box-shadow:var(--shadow-sm);
+}
+
+/* Listes : puces = disques pastel cerclés */
+ul.dots{list-style:none;}
+ul.dots li{position:relative;padding-left:48px;margin-bottom:22px;font-size:32px;font-weight:600;line-height:1.4;}
+ul.dots li::before{
+  content:"";position:absolute;left:0;top:8px;width:24px;height:24px;border-radius:50%;
+  border:2px solid var(--ink);background:var(--butter);
+}
+
+/* Grilles */
+.grid{display:grid;gap:32px;width:100%;}
+.g2{grid-template-columns:repeat(2,1fr);}
+.g3{grid-template-columns:repeat(3,1fr);}
+.g4{grid-template-columns:repeat(4,1fr);}
+
+.feature{display:flex;flex-direction:column;align-items:center;text-align:center;gap:18px;}
+.feature .body{font-size:28px;}
+
+/* Bulle question / réponse (slides exemples) */
+.qa{display:flex;flex-direction:column;gap:30px;width:100%;max-width:1320px;}
+.bubble{border:var(--border);border-radius:28px;box-shadow:var(--shadow);padding:34px 44px;position:relative;}
+.bubble .who{font-family:var(--font-display);font-size:30px;margin-bottom:12px;}
+.bubble .txt{font-size:34px;font-weight:600;line-height:1.45;}
+.bubble.q{background:var(--sky);align-self:flex-start;max-width:1000px;}
+.bubble.a{background:var(--white);align-self:flex-end;max-width:1160px;}
+
+/* En-tête de slide (titre centré + sous-titre) */
+.head{display:flex;flex-direction:column;align-items:center;gap:22px;margin-bottom:56px;text-align:center;}
+
+/* Pied de slide titre */
+.cover-footer{position:absolute;bottom:70px;left:120px;right:120px;display:flex;
+  justify-content:space-between;align-items:center;}
+
+/* ===========================================
+   DÉCORATIONS DESSINÉES (daisies, étoiles, soleil…)
+   Couche atmosphérique z-index:1, sous le contenu (z-index:2)
+   =========================================== */
+.deco{position:absolute;z-index:1;pointer-events:none;animation:float 7s ease-in-out infinite;}
+.slide-content{position:relative;z-index:2;width:100%;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;}
+.deco:nth-of-type(2){animation-duration:8.5s;animation-delay:-1.5s;}
+.deco:nth-of-type(3){animation-duration:6s;animation-delay:-3s;}
+.deco:nth-of-type(4){animation-duration:9s;animation-delay:-2s;}
+.deco:nth-of-type(5){animation-duration:7.5s;animation-delay:-4s;}
+.spin{animation:spin 36s linear infinite;transform-origin:center;}
+@keyframes float{0%,100%{transform:translateY(0);}50%{transform:translateY(-16px);}}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* ===========================================
+   ANIMATIONS D'ENTRÉE (déclenchées par .visible)
+   =========================================== */
+.reveal{opacity:0;transform:translateY(40px) scale(.96);
+  transition:opacity .65s var(--ease),transform .65s var(--ease);}
+.slide.visible .reveal{opacity:1;transform:none;}
+.d0{transition-delay:.05s;} .d1{transition-delay:.18s;} .d2{transition-delay:.31s;}
+.d3{transition-delay:.44s;} .d4{transition-delay:.57s;} .d5{transition-delay:.70s;}
+.d6{transition-delay:.83s;} .d7{transition-delay:.96s;}
+
+/* ===========================================
+   CHROME (hors scène) : compteur + points de nav
+   =========================================== */
+.counter{
+  position:fixed;bottom:22px;left:50%;transform:translateX(-50%);z-index:1000;
+  background:var(--white);border:var(--border);border-radius:50px;padding:8px 26px;
+  font-family:var(--font-display);font-size:26px;color:var(--ink);box-shadow:var(--shadow-sm);
+}
+.navdots{position:fixed;right:26px;top:50%;transform:translateY(-50%);z-index:1000;
+  display:flex;flex-direction:column;gap:16px;}
+.navdots button{width:16px;height:16px;border-radius:50%;border:2px solid var(--ink);
+  background:var(--white);cursor:pointer;padding:0;transition:transform .2s,background .2s;}
+.navdots button.on{background:var(--butter);transform:scale(1.35);}
+.hint{position:fixed;bottom:24px;right:26px;z-index:1000;font-family:var(--font-body);
+  font-weight:600;font-size:20px;color:var(--ink);opacity:.6;}
+
+/* Bouton d'édition (apparaît en haut à gauche / touche E) */
+.edit-hotzone{position:fixed;top:0;left:0;width:90px;height:90px;z-index:10000;cursor:pointer;}
+.edit-toggle{position:fixed;top:18px;left:18px;z-index:10001;width:54px;height:54px;border-radius:50%;
+  border:var(--border);background:var(--mint);font-size:24px;cursor:pointer;opacity:0;
+  pointer-events:none;transition:opacity .3s;box-shadow:var(--shadow-sm);}
+.edit-toggle.show,.edit-toggle.active{opacity:1;pointer-events:auto;}
+.edit-toggle.active{background:var(--coral);}
+body.editing [contenteditable]{outline:2px dashed var(--coral);outline-offset:4px;border-radius:6px;}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.2s!important;}
+  .reveal{opacity:1!important;transform:none!important;}
+}
+</style>
+</head>
+<body>
+<div class="deck-viewport">
+<main class="deck-stage" id="deckStage">
+
+  <!-- ============ SLIDE 1 — TITRE ============ -->
+  <section class="slide active bg-cream">
+    <svg class="deco spin" style="top:-60px;left:-50px;width:300px;height:300px;" viewBox="0 0 100 100" aria-hidden="true">
+      <g style="transform-origin:50px 50px"><g stroke="#2D2D2D" stroke-width="3" stroke-linecap="round">
+        <line x1="50" y1="5" x2="50" y2="19"/><line x1="50" y1="81" x2="50" y2="95"/><line x1="5" y1="50" x2="19" y2="50"/><line x1="81" y1="50" x2="95" y2="50"/>
+        <line x1="17" y1="17" x2="27" y2="27"/><line x1="73" y1="73" x2="83" y2="83"/><line x1="83" y1="17" x2="73" y2="27"/><line x1="27" y1="73" x2="17" y2="83"/></g>
+        <circle cx="50" cy="50" r="23" fill="#FDE68A" stroke="#2D2D2D" stroke-width="3"/></g>
+    </svg>
+    <svg class="deco" style="bottom:-50px;right:40px;width:280px;height:280px;" viewBox="0 0 120 120" aria-hidden="true">
+      <g transform="translate(60,60)" stroke="#2D2D2D" stroke-width="3" stroke-linejoin="round"><g fill="#FFFFFF">
+        <ellipse cx="0" cy="-34" rx="15" ry="26"/><ellipse cx="0" cy="34" rx="15" ry="26"/><ellipse cx="-34" cy="0" rx="26" ry="15"/><ellipse cx="34" cy="0" rx="26" ry="15"/>
+        <ellipse cx="-24" cy="-24" rx="15" ry="26" transform="rotate(45 -24 -24)"/><ellipse cx="24" cy="-24" rx="15" ry="26" transform="rotate(-45 24 -24)"/>
+        <ellipse cx="-24" cy="24" rx="15" ry="26" transform="rotate(-45 -24 24)"/><ellipse cx="24" cy="24" rx="15" ry="26" transform="rotate(45 24 24)"/></g>
+        <circle r="16" fill="#FDE68A"/></g>
+    </svg>
+    <svg class="deco" style="top:170px;right:150px;width:120px;height:120px;" viewBox="0 0 100 100" aria-hidden="true">
+      <path d="M50 6 L62 38 L96 40 L69 61 L79 95 L50 75 L21 95 L31 61 L4 40 L38 38 Z" fill="#F7C8D4" stroke="#2D2D2D" stroke-width="3" stroke-linejoin="round"/>
+    </svg>
+    <svg class="deco" style="bottom:210px;left:130px;width:90px;height:90px;" viewBox="0 0 100 100" aria-hidden="true">
+      <path d="M50 6 L62 38 L96 40 L69 61 L79 95 L50 75 L21 95 L31 61 L4 40 L38 38 Z" fill="#A8E6CF" stroke="#2D2D2D" stroke-width="3" stroke-linejoin="round"/>
+    </svg>
+
+    <div class="slide-content">
+      <span class="badge reveal d0">🌼 Faisons connaissance</span>
+      <h1 class="display reveal d1" style="text-align:center;margin-top:46px;">L'IA, <span class="hl">tout simplement</span></h1>
+      <p class="lead reveal d2" style="margin-top:40px;">Comprendre l'intelligence artificielle, à votre rythme.</p>
+    </div>
+    <div class="cover-footer reveal d3">
+      <span class="meta">Une présentation en famille</span>
+      <span class="meta">2026</span>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 2 — DÉJÀ DANS VOTRE VIE ============ -->
+  <section class="slide bg-sky">
+    <svg class="deco" style="top:-40px;right:60px;width:230px;height:140px;" viewBox="0 0 100 60" aria-hidden="true">
+      <path d="M20 48 a16 16 0 0 1 4 -32 a20 20 0 0 1 38 4 a14 14 0 0 1 14 28 z" fill="#FFFFFF" stroke="#2D2D2D" stroke-width="3"/>
+    </svg>
+    <svg class="deco" style="bottom:-30px;left:-30px;width:200px;height:120px;" viewBox="0 0 100 60" aria-hidden="true">
+      <path d="M20 48 a16 16 0 0 1 4 -32 a20 20 0 0 1 38 4 a14 14 0 0 1 14 28 z" fill="#FFFFFF" stroke="#2D2D2D" stroke-width="3"/>
+    </svg>
+    <div class="slide-content">
+      <div class="head">
+        <h2 class="headline on-soft reveal d0">L'IA est déjà dans votre vie</h2>
+        <p class="lead reveal d1" style="color:var(--ink);">…et vous l'utilisez déjà sans le savoir !</p>
+      </div>
+      <div class="grid g4 reveal d2" style="max-width:1560px;">
+        <div class="card feature"><div class="icon" style="background:var(--butter)">🌦️</div><div class="title">La météo</div><div class="body">Les prévisions sont calculées par des modèles intelligents.</div></div>
+        <div class="card feature"><div class="icon" style="background:var(--mint)">🗺️</div><div class="title">Le GPS</div><div class="body">Il choisit le meilleur itinéraire et évite les bouchons.</div></div>
+        <div class="card feature"><div class="icon" style="background:var(--pink)">⌨️</div><div class="title">Le correcteur</div><div class="body">Votre téléphone devine et corrige les mots.</div></div>
+        <div class="card feature"><div class="icon" style="background:var(--lavender)">📷</div><div class="title">Vos photos</div><div class="body">Le téléphone retrouve « les photos de la mer » tout seul.</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 3 — C'EST QUOI ? ============ -->
+  <section class="slide bg-cream">
+    <svg class="deco" style="top:-50px;right:-40px;width:260px;height:260px;" viewBox="0 0 120 120" aria-hidden="true">
+      <g transform="translate(60,60)" stroke="#2D2D2D" stroke-width="3" stroke-linejoin="round"><g fill="#FFFFFF">
+        <ellipse cx="0" cy="-34" rx="15" ry="26"/><ellipse cx="0" cy="34" rx="15" ry="26"/><ellipse cx="-34" cy="0" rx="26" ry="15"/><ellipse cx="34" cy="0" rx="26" ry="15"/>
+        <ellipse cx="-24" cy="-24" rx="15" ry="26" transform="rotate(45 -24 -24)"/><ellipse cx="24" cy="-24" rx="15" ry="26" transform="rotate(-45 24 -24)"/>
+        <ellipse cx="-24" cy="24" rx="15" ry="26" transform="rotate(-45 -24 24)"/><ellipse cx="24" cy="24" rx="15" ry="26" transform="rotate(45 24 24)"/></g>
+        <circle r="16" fill="#FDE68A"/></g>
+    </svg>
+    <svg class="deco" style="bottom:120px;left:90px;width:110px;height:110px;" viewBox="0 0 100 100" aria-hidden="true">
+      <path d="M50 6 L62 38 L96 40 L69 61 L79 95 L50 75 L21 95 L31 61 L4 40 L38 38 Z" fill="#D4A5E8" stroke="#2D2D2D" stroke-width="3" stroke-linejoin="round"/>
+    </svg>
+    <div class="slide-content">
+      <span class="badge reveal d0" style="background:var(--turquoise)">C'est quoi, au juste ?</span>
+      <h2 class="headline reveal d1" style="margin-top:50px;max-width:1400px;">Une machine qui apprend<br>à partir d'<span class="hl">exemples</span>.</h2>
+      <p class="lead reveal d2" style="margin-top:46px;max-width:1100px;">Pas de magie, pas de cerveau : surtout beaucoup d'exemples et des mathématiques.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 4 — ANALOGIE DE L'ENFANT ============ -->
+  <section class="slide bg-mint">
+    <svg class="deco spin" style="top:-40px;right:-30px;width:200px;height:200px;" viewBox="0 0 100 100" aria-hidden="true">
+      <g style="transform-origin:50px 50px"><g stroke="#2D2D2D" stroke-width="3" stroke-linecap="round">
+        <line x1="50" y1="5" x2="50" y2="19"/><line x1="50" y1="81" x2="50" y2="95"/><line x1="5" y1="50" x2="19" y2="50"/><line x1="81" y1="50" x2="95" y2="50"/>
+        <line x1="17" y1="17" x2="27" y2="27"/><line x1="73" y1="73" x2="83" y2="83"/><line x1="83" y1="17" x2="73" y2="27"/><line x1="27" y1="73" x2="17" y2="83"/></g>
+        <circle cx="50" cy="50" r="23" fill="#FDE68A" stroke="#2D2D2D" stroke-width="3"/></g>
+    </svg>
+    <div class="slide-content">
+      <div class="head"><h2 class="headline on-soft reveal d0">Comme un enfant qui apprend</h2></div>
+      <div class="grid g3 reveal d1" style="max-width:1560px;">
+        <div class="card card-lg feature"><div class="dot" style="background:var(--coral)">1</div><div class="title">On montre</div><div class="body">On présente des milliers de photos de chats à l'ordinateur.</div></div>
+        <div class="card card-lg feature"><div class="dot" style="background:var(--sky)">2</div><div class="title">Il repère</div><div class="body">Il remarque tout seul les points communs : moustaches, oreilles, poils…</div></div>
+        <div class="card card-lg feature"><div class="dot" style="background:var(--lavender)">3</div><div class="title">Il reconnaît</div><div class="body">Devant une nouvelle photo, il dit : « ça, c'est un chat ! »</div></div>
+      </div>
+      <p class="lead reveal d2" style="color:var(--ink);margin-top:48px;">C'est exactement comme ça qu'un petit-enfant apprend les mots.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 5 — CE QUE CE N'EST PAS ============ -->
+  <section class="slide bg-cream">
+    <svg class="deco" style="top:60px;left:80px;width:120px;height:120px;" viewBox="0 0 100 100" aria-hidden="true">
+      <path d="M50 6 L62 38 L96 40 L69 61 L79 95 L50 75 L21 95 L31 61 L4 40 L38 38 Z" fill="#FFCBA4" stroke="#2D2D2D" stroke-width="3" stroke-linejoin="round"/>
+    </svg>
+    <svg class="deco" style="bottom:-40px;right:-30px;width:240px;height:240px;" viewBox="0 0 120 120" aria-hidden="true">
+      <g transform="translate(60,60)" stroke="#2D2D2D" stroke-width="3" stroke-linejoin="round"><g fill="#FFFFFF">
+        <ellipse cx="0" cy="-34" rx="15" ry="26"/><ellipse cx="0" cy="34" rx="15" ry="26"/><ellipse cx="-34" cy="0" rx="26" ry="15"/><ellipse cx="34" cy="0" rx="26" ry="15"/>
+        <ellipse cx="-24" cy="-24" rx="15" ry="26" transform="rotate(45 -24 -24)"/><ellipse cx="24" cy="-24" rx="15" ry="26" transform="rotate(-45 24 -24)"/>
+        <ellipse cx="-24" cy="24" rx="15" ry="26" transform="rotate(-45 -24 24)"/><ellipse cx="24" cy="24" rx="15" ry="26" transform="rotate(45 24 24)"/></g>
+        <circle r="16" fill="#FDE68A"/></g>
+    </svg>
+    <div class="slide-content">
+      <div class="head"><h2 class="headline reveal d0">Ce que ce <span class="hl">n'est pas</span></h2></div>
+      <div class="grid g3 reveal d1" style="max-width:1500px;">
+        <div class="card card-lg feature"><div class="icon" style="background:var(--pink)">🤖</div><div class="title">Pas un robot conscient</div><div class="body">Elle ne « pense » pas et ne comprend pas comme nous.</div></div>
+        <div class="card card-lg feature"><div class="icon" style="background:var(--sky)">🎬</div><div class="title">Pas Terminator</div><div class="body">Les machines des films, c'est de la science-fiction.</div></div>
+        <div class="card card-lg feature"><div class="icon" style="background:var(--butter)">❤️</div><div class="title">Pas de sentiments</div><div class="body">Elle n'a ni émotions, ni intentions, ni volonté propre.</div></div>
+      </div>
+      <p class="lead reveal d2" style="margin-top:48px;">Juste un outil… très doué pour le langage.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 6 — CHATGPT ============ -->
+  <section class="slide bg-lavender">
+    <svg class="deco" style="top:-40px;left:50px;width:200px;height:120px;" viewBox="0 0 100 60" aria-hidden="true">
+      <path d="M20 48 a16 16 0 0 1 4 -32 a20 20 0 0 1 38 4 a14 14 0 0 1 14 28 z" fill="#FFFFFF" stroke="#2D2D2D" stroke-width="3"/>
+    </svg>
+    <svg class="deco" style="bottom:90px;right:90px;width:110px;height:110px;" viewBox="0 0 100 100" aria-hidden="true">
+      <path d="M50 6 L62 38 L96 40 L69 61 L79 95 L50 75 L21 95 L31 61 L4 40 L38 38 Z" fill="#FDE68A" stroke="#2D2D2D" stroke-width="3" stroke-linejoin="round"/>
+    </svg>
+    <div class="slide-content">
+      <span class="badge reveal d0" style="background:var(--white)">💬 ChatGPT, c'est quoi ?</span>
+      <h2 class="headline on-soft reveal d1" style="margin-top:46px;max-width:1500px;">Un assistant qui sait écrire<br>et répondre à vos questions</h2>
+      <div class="card card-lg reveal d2" style="margin-top:50px;max-width:1200px;">
+        <p class="body-strong" style="text-align:center;">Imaginez quelqu'un de <strong>très cultivé</strong>, toujours disponible et patient…<br>mais qui peut <span style="color:var(--coral)">parfois se tromper</span>. On lui parle simplement, comme à une personne.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 7 — À QUOI ÇA SERT ============ -->
+  <section class="slide bg-cream">
+    <svg class="deco" style="top:-50px;right:-30px;width:180px;height:100px;" viewBox="0 0 160 90" aria-hidden="true">
+      <g fill="none" stroke-width="11" stroke-linecap="round">
+        <path d="M16 84 a64 64 0 0 1 128 0" stroke="#F8635F"/><path d="M32 84 a48 48 0 0 1 96 0" stroke="#FDE68A"/>
+        <path d="M48 84 a32 32 0 0 1 64 0" stroke="#A8E6CF"/><path d="M64 84 a16 16 0 0 1 32 0" stroke="#A8D8F0"/></g>
+    </svg>
+    <div class="slide-content">
+      <div class="head"><h2 class="headline reveal d0">À quoi ça peut <span class="hl">vous</span> servir ?</h2></div>
+      <div class="grid g3 reveal d1" style="max-width:1500px;gap:28px;">
+        <div class="card feature"><div class="icon" style="background:var(--pink)">✉️</div><div class="title">Écrire une lettre</div></div>
+        <div class="card feature"><div class="icon" style="background:var(--mint)">🌍</div><div class="title">Traduire</div></div>
+        <div class="card feature"><div class="icon" style="background:var(--sky)">📄</div><div class="title">Résumer un texte</div></div>
+        <div class="card feature"><div class="icon" style="background:var(--butter)">💡</div><div class="title">Expliquer simplement</div></div>
+        <div class="card feature"><div class="icon" style="background:var(--peach)">🍳</div><div class="title">Idées de recettes</div></div>
+        <div class="card feature"><div class="icon" style="background:var(--lavender)">🎁</div><div class="title">Idées de cadeaux</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 8 — EXEMPLE 1 ============ -->
+  <section class="slide bg-turquoise">
+    <svg class="deco spin" style="top:-50px;right:-40px;width:200px;height:200px;" viewBox="0 0 100 100" aria-hidden="true">
+      <g style="transform-origin:50px 50px"><g stroke="#2D2D2D" stroke-width="3" stroke-linecap="round">
+        <line x1="50" y1="5" x2="50" y2="19"/><line x1="50" y1="81" x2="50" y2="95"/><line x1="5" y1="50" x2="19" y2="50"/><line x1="81" y1="50" x2="95" y2="50"/>
+        <line x1="17" y1="17" x2="27" y2="27"/><line x1="73" y1="73" x2="83" y2="83"/><line x1="83" y1="17" x2="73" y2="27"/><line x1="27" y1="73" x2="17" y2="83"/></g>
+        <circle cx="50" cy="50" r="23" fill="#FDE68A" stroke="#2D2D2D" stroke-width="3"/></g>
+    </svg>
+    <div class="slide-content">
+      <div class="head"><span class="badge reveal d0" style="background:var(--white)">Exemple 1 · 💡 Expliquer un mot compliqué</span></div>
+      <div class="qa">
+        <div class="bubble q reveal d1"><div class="who">Vous demandez :</div><div class="txt">« C'est quoi le "cloud" dont tout le monde parle ? »</div></div>
+        <div class="bubble a reveal d2"><div class="who" style="color:var(--coral)">L'IA répond :</div><div class="txt">« Ce sont de grands ordinateurs, ailleurs, qui gardent vos photos et vos documents. Vous y accédez par internet depuis n'importe quel appareil — comme un coffre-fort en ligne. »</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 9 — EXEMPLE 2 ============ -->
+  <section class="slide bg-peach">
+    <svg class="deco" style="bottom:-40px;left:-30px;width:230px;height:230px;" viewBox="0 0 120 120" aria-hidden="true">
+      <g transform="translate(60,60)" stroke="#2D2D2D" stroke-width="3" stroke-linejoin="round"><g fill="#FFFFFF">
+        <ellipse cx="0" cy="-34" rx="15" ry="26"/><ellipse cx="0" cy="34" rx="15" ry="26"/><ellipse cx="-34" cy="0" rx="26" ry="15"/><ellipse cx="34" cy="0" rx="26" ry="15"/>
+        <ellipse cx="-24" cy="-24" rx="15" ry="26" transform="rotate(45 -24 -24)"/><ellipse cx="24" cy="-24" rx="15" ry="26" transform="rotate(-45 24 -24)"/>
+        <ellipse cx="-24" cy="24" rx="15" ry="26" transform="rotate(-45 -24 24)"/><ellipse cx="24" cy="24" rx="15" ry="26" transform="rotate(45 24 24)"/></g>
+        <circle r="16" fill="#FDE68A"/></g>
+    </svg>
+    <div class="slide-content">
+      <div class="head"><span class="badge reveal d0" style="background:var(--white)">Exemple 2 · ✉️ Écrire un petit mot</span></div>
+      <div class="qa">
+        <div class="bubble q reveal d1"><div class="who">Vous demandez :</div><div class="txt">« Écris un message d'anniversaire joyeux pour mon amie Camille. »</div></div>
+        <div class="bubble a reveal d2"><div class="who" style="color:var(--coral)">L'IA répond :</div><div class="txt">« Chère Camille, joyeux anniversaire ! Que cette nouvelle année déborde de rires, de belles surprises et de bons moments avec ceux que tu aimes. On trinque à toi ! 🎉 »</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 10 — EXEMPLE 3 ============ -->
+  <section class="slide bg-pink">
+    <svg class="deco" style="top:-40px;right:60px;width:120px;height:120px;" viewBox="0 0 100 100" aria-hidden="true">
+      <path d="M50 6 L62 38 L96 40 L69 61 L79 95 L50 75 L21 95 L31 61 L4 40 L38 38 Z" fill="#A8E6CF" stroke="#2D2D2D" stroke-width="3" stroke-linejoin="round"/>
+    </svg>
+    <div class="slide-content">
+      <div class="head"><span class="badge reveal d0" style="background:var(--white)">Exemple 3 · 🍳 Une idée de recette</span></div>
+      <div class="qa">
+        <div class="bubble q reveal d1"><div class="who">Vous demandez :</div><div class="txt">« J'ai des courgettes et des œufs. Qu'est-ce que je peux cuisiner ? »</div></div>
+        <div class="bubble a reveal d2"><div class="who" style="color:var(--coral)">L'IA répond :</div><div class="txt">« Une bonne omelette aux courgettes ! Faites revenir les courgettes en rondelles, battez 4 œufs avec sel et poivre, versez sur les courgettes et laissez cuire à feu doux. Prêt en 15 minutes. »</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 11 — ELLE PEUT SE TROMPER ============ -->
+  <section class="slide bg-butter">
+    <svg class="deco" style="top:70px;left:90px;width:120px;height:120px;" viewBox="0 0 100 100" aria-hidden="true">
+      <path d="M50 6 L62 38 L96 40 L69 61 L79 95 L50 75 L21 95 L31 61 L4 40 L38 38 Z" fill="#FFFFFF" stroke="#2D2D2D" stroke-width="3" stroke-linejoin="round"/>
+    </svg>
+    <div class="slide-content">
+      <div class="head"><h2 class="headline on-soft reveal d0">⚠️ L'IA peut se tromper… ou inventer</h2></div>
+      <div class="card card-lg reveal d1" style="max-width:1200px;">
+        <p class="body-strong" style="text-align:center;">Elle répond <strong>toujours avec assurance</strong>,<br>même quand c'est faux.</p>
+      </div>
+      <div class="card card-lg reveal d2" style="max-width:1200px;margin-top:34px;background:var(--coral);">
+        <p class="body-strong" style="text-align:center;color:var(--white);">👉 Vérifiez toujours les informations importantes<br>(santé, argent, dates, noms).</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 12 — LES PIÈGES ============ -->
+  <section class="slide bg-cream">
+    <svg class="deco" style="bottom:-40px;right:-30px;width:220px;height:220px;" viewBox="0 0 120 120" aria-hidden="true">
+      <g transform="translate(60,60)" stroke="#2D2D2D" stroke-width="3" stroke-linejoin="round"><g fill="#FFFFFF">
+        <ellipse cx="0" cy="-34" rx="15" ry="26"/><ellipse cx="0" cy="34" rx="15" ry="26"/><ellipse cx="-34" cy="0" rx="26" ry="15"/><ellipse cx="34" cy="0" rx="26" ry="15"/>
+        <ellipse cx="-24" cy="-24" rx="15" ry="26" transform="rotate(45 -24 -24)"/><ellipse cx="24" cy="-24" rx="15" ry="26" transform="rotate(-45 24 -24)"/>
+        <ellipse cx="-24" cy="24" rx="15" ry="26" transform="rotate(-45 -24 24)"/><ellipse cx="24" cy="24" rx="15" ry="26" transform="rotate(45 24 24)"/></g>
+        <circle r="16" fill="#FDE68A"/></g>
+    </svg>
+    <div class="slide-content">
+      <div class="head"><h2 class="headline reveal d0">Les pièges à connaître</h2></div>
+      <div class="grid g3 reveal d1" style="max-width:1500px;">
+        <div class="card card-lg feature"><div class="icon" style="background:var(--sky)">🖼️</div><div class="title">Fausses images</div><div class="body">Photos et vidéos truquées très réalistes (« deepfakes »).</div></div>
+        <div class="card card-lg feature"><div class="icon" style="background:var(--pink)">📞</div><div class="title">Fausses voix</div><div class="body">Au téléphone, une voix imitée peut se faire passer pour un proche.</div></div>
+        <div class="card card-lg feature"><div class="icon" style="background:var(--peach)">🎣</div><div class="title">Arnaques & fausses infos</div><div class="body">Messages alarmants pour vous pousser à payer ou cliquer.</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 13 — LES RÈGLES D'OR ============ -->
+  <section class="slide bg-mint">
+    <svg class="deco spin" style="bottom:-40px;left:-30px;width:200px;height:200px;" viewBox="0 0 100 100" aria-hidden="true">
+      <g style="transform-origin:50px 50px"><g stroke="#2D2D2D" stroke-width="3" stroke-linecap="round">
+        <line x1="50" y1="5" x2="50" y2="19"/><line x1="50" y1="81" x2="50" y2="95"/><line x1="5" y1="50" x2="19" y2="50"/><line x1="81" y1="50" x2="95" y2="50"/>
+        <line x1="17" y1="17" x2="27" y2="27"/><line x1="73" y1="73" x2="83" y2="83"/><line x1="83" y1="17" x2="73" y2="27"/><line x1="27" y1="73" x2="17" y2="83"/></g>
+        <circle cx="50" cy="50" r="23" fill="#FDE68A" stroke="#2D2D2D" stroke-width="3"/></g>
+    </svg>
+    <div class="slide-content">
+      <div class="head"><h2 class="headline on-soft reveal d0">🌟 Les règles d'or</h2></div>
+      <div class="card card-lg reveal d1" style="max-width:1240px;">
+        <ul class="dots">
+          <li>Ne <strong>jamais</strong> donner ses codes ou infos bancaires.</li>
+          <li>Dans le doute, <strong>vérifier auprès d'un proche</strong> ou rappeler soi-même.</li>
+          <li>Ne pas tout croire : une réponse n'est pas une preuve.</li>
+          <li>Prendre son temps : rien n'oblige à répondre dans l'urgence.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 14 (NOUVELLE) — RÉSEAUX SOCIAUX / FACEBOOK ============ -->
+  <section class="slide bg-peach">
+    <svg class="deco" style="bottom:-40px;left:-30px;width:220px;height:220px;" viewBox="0 0 120 120" aria-hidden="true">
+      <g transform="translate(60,60)" stroke="#2D2D2D" stroke-width="3" stroke-linejoin="round"><g fill="#FFFFFF">
+        <ellipse cx="0" cy="-34" rx="15" ry="26"/><ellipse cx="0" cy="34" rx="15" ry="26"/><ellipse cx="-34" cy="0" rx="26" ry="15"/><ellipse cx="34" cy="0" rx="26" ry="15"/>
+        <ellipse cx="-24" cy="-24" rx="15" ry="26" transform="rotate(45 -24 -24)"/><ellipse cx="24" cy="-24" rx="15" ry="26" transform="rotate(-45 24 -24)"/>
+        <ellipse cx="-24" cy="24" rx="15" ry="26" transform="rotate(-45 -24 24)"/><ellipse cx="24" cy="24" rx="15" ry="26" transform="rotate(45 24 24)"/></g>
+        <circle r="16" fill="#FDE68A"/></g>
+    </svg>
+    <svg class="deco" style="top:70px;right:90px;width:110px;height:110px;" viewBox="0 0 100 100" aria-hidden="true">
+      <path d="M50 6 L62 38 L96 40 L69 61 L79 95 L50 75 L21 95 L31 61 L4 40 L38 38 Z" fill="#A8D8F0" stroke="#2D2D2D" stroke-width="3" stroke-linejoin="round"/>
+    </svg>
+    <div class="slide-content">
+      <div class="head"><h2 class="headline on-soft reveal d0">📱 Réseaux sociaux : gare aux bêtises</h2></div>
+      <div class="card card-lg reveal d1" style="max-width:1260px;">
+        <div class="title" style="margin-bottom:14px;">📘 Surtout sur Facebook, on trouve…</div>
+        <ul class="dots">
+          <li>Des <strong>fausses histoires</strong> et des photos truquées, souvent fabriquées par l'IA.</li>
+          <li>Des publications faites pour <strong>choquer et faire cliquer</strong>, pas pour informer.</li>
+          <li>Des faux concours, des arnaques et des « pièges à clics ».</li>
+        </ul>
+      </div>
+      <div class="card card-lg reveal d2" style="max-width:1260px;margin-top:30px;background:var(--coral);">
+        <p class="body-strong" style="text-align:center;color:var(--white);">👉 Si c'est trop beau ou trop choquant, c'est souvent faux.<br>On vérifie <strong>avant</strong> de partager.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 15 (NOUVELLE) — L'IA ET LES ARTISTES ============ -->
+  <section class="slide bg-pink">
+    <svg class="deco" style="top:-40px;left:-30px;width:220px;height:220px;" viewBox="0 0 120 120" aria-hidden="true">
+      <g transform="translate(60,60)" stroke="#2D2D2D" stroke-width="3" stroke-linejoin="round"><g fill="#FFFFFF">
+        <ellipse cx="0" cy="-34" rx="15" ry="26"/><ellipse cx="0" cy="34" rx="15" ry="26"/><ellipse cx="-34" cy="0" rx="26" ry="15"/><ellipse cx="34" cy="0" rx="26" ry="15"/>
+        <ellipse cx="-24" cy="-24" rx="15" ry="26" transform="rotate(45 -24 -24)"/><ellipse cx="24" cy="-24" rx="15" ry="26" transform="rotate(-45 24 -24)"/>
+        <ellipse cx="-24" cy="24" rx="15" ry="26" transform="rotate(-45 -24 24)"/><ellipse cx="24" cy="24" rx="15" ry="26" transform="rotate(45 24 24)"/></g>
+        <circle r="16" fill="#FDE68A"/></g>
+    </svg>
+    <svg class="deco" style="bottom:80px;right:90px;width:110px;height:110px;" viewBox="0 0 100 100" aria-hidden="true">
+      <path d="M50 6 L62 38 L96 40 L69 61 L79 95 L50 75 L21 95 L31 61 L4 40 L38 38 Z" fill="#A8E6CF" stroke="#2D2D2D" stroke-width="3" stroke-linejoin="round"/>
+    </svg>
+    <div class="slide-content">
+      <div class="head"><h2 class="headline on-soft reveal d0">🎨 Et les artistes dans tout ça ?</h2></div>
+      <div class="card card-lg reveal d1" style="max-width:1280px;">
+        <div class="title" style="margin-bottom:14px;">Pour créer des images ou de la musique, l'IA…</div>
+        <ul class="dots">
+          <li>a appris en <strong>copiant des millions d'œuvres</strong> trouvées sur internet.</li>
+          <li>souvent <strong>sans l'autorisation des artistes</strong>, et sans les payer.</li>
+          <li>peut imiter le style d'un créateur en quelques secondes.</li>
+        </ul>
+      </div>
+      <div class="card card-lg reveal d2" style="max-width:1280px;margin-top:30px;background:var(--coral);">
+        <p class="body-strong" style="text-align:center;color:var(--white);">👉 Beaucoup d'artistes se sentent <strong>dépossédés</strong> de leur travail.<br>C'est aujourd'hui un vrai débat de société.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 16 — À RETENIR ============ -->
+  <section class="slide bg-sky">
+    <svg class="deco" style="top:-40px;right:-30px;width:230px;height:230px;" viewBox="0 0 120 120" aria-hidden="true">
+      <g transform="translate(60,60)" stroke="#2D2D2D" stroke-width="3" stroke-linejoin="round"><g fill="#FFFFFF">
+        <ellipse cx="0" cy="-34" rx="15" ry="26"/><ellipse cx="0" cy="34" rx="15" ry="26"/><ellipse cx="-34" cy="0" rx="26" ry="15"/><ellipse cx="34" cy="0" rx="26" ry="15"/>
+        <ellipse cx="-24" cy="-24" rx="15" ry="26" transform="rotate(45 -24 -24)"/><ellipse cx="24" cy="-24" rx="15" ry="26" transform="rotate(-45 24 -24)"/>
+        <ellipse cx="-24" cy="24" rx="15" ry="26" transform="rotate(-45 -24 24)"/><ellipse cx="24" cy="24" rx="15" ry="26" transform="rotate(45 24 24)"/></g>
+        <circle r="16" fill="#FDE68A"/></g>
+    </svg>
+    <div class="slide-content">
+      <span class="badge reveal d0" style="background:var(--white)">🌈 À retenir</span>
+      <h2 class="headline on-soft reveal d1" style="margin-top:46px;max-width:1450px;">C'est un outil —<br>et c'est <span class="hl">vous</span> qui gardez les commandes.</h2>
+      <p class="lead reveal d2" style="color:var(--ink);margin-top:46px;">Utile quand on s'en sert avec curiosité… et avec prudence.</p>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 16 (NOUVELLE) — ENTREPRISES IA & PRODUITS PHARES ============ -->
+  <section class="slide bg-lavender">
+    <svg class="deco spin" style="top:-40px;right:-30px;width:190px;height:190px;" viewBox="0 0 100 100" aria-hidden="true">
+      <g style="transform-origin:50px 50px"><g stroke="#2D2D2D" stroke-width="3" stroke-linecap="round">
+        <line x1="50" y1="5" x2="50" y2="19"/><line x1="50" y1="81" x2="50" y2="95"/><line x1="5" y1="50" x2="19" y2="50"/><line x1="81" y1="50" x2="95" y2="50"/>
+        <line x1="17" y1="17" x2="27" y2="27"/><line x1="73" y1="73" x2="83" y2="83"/><line x1="83" y1="17" x2="73" y2="27"/><line x1="27" y1="73" x2="17" y2="83"/></g>
+        <circle cx="50" cy="50" r="23" fill="#FDE68A" stroke="#2D2D2D" stroke-width="3"/></g>
+    </svg>
+    <svg class="deco" style="bottom:60px;left:70px;width:100px;height:100px;" viewBox="0 0 100 100" aria-hidden="true">
+      <path d="M50 6 L62 38 L96 40 L69 61 L79 95 L50 75 L21 95 L31 61 L4 40 L38 38 Z" fill="#F7C8D4" stroke="#2D2D2D" stroke-width="3" stroke-linejoin="round"/>
+    </svg>
+    <div class="slide-content">
+      <div class="head"><h2 class="headline on-soft reveal d0">Qui fabrique ces IA ?</h2></div>
+      <div class="grid g3 reveal d1" style="max-width:1560px;gap:28px;">
+        <div class="card feature">
+          <div class="icon" style="background:var(--mint)">💬</div>
+          <div style="font-family:var(--font-display);font-size:38px;line-height:1.1;">OpenAI</div>
+          <div class="body" style="font-size:25px;">Produit phare :<br><strong style="color:var(--coral)">ChatGPT</strong> — le plus connu.</div>
+        </div>
+        <div class="card feature">
+          <div class="icon" style="background:var(--sky)">✨</div>
+          <div style="font-family:var(--font-display);font-size:38px;line-height:1.1;">Google</div>
+          <div class="body" style="font-size:25px;">Produit phare :<br><strong style="color:var(--coral)">Gemini</strong> — le géant du web.</div>
+        </div>
+        <div class="card feature">
+          <div class="icon" style="background:var(--peach)">🧠</div>
+          <div style="font-family:var(--font-display);font-size:38px;line-height:1.1;">Anthropic</div>
+          <div class="body" style="font-size:25px;">Produit phare :<br><strong style="color:var(--coral)">Claude</strong> — réponses soignées.</div>
+        </div>
+        <div class="card feature">
+          <div class="icon" style="background:var(--butter)">🪟</div>
+          <div style="font-family:var(--font-display);font-size:38px;line-height:1.1;">Microsoft</div>
+          <div class="body" style="font-size:25px;">Produit phare :<br><strong style="color:var(--coral)">Copilot</strong> — dans Windows.</div>
+        </div>
+        <div class="card feature">
+          <div class="icon" style="background:var(--pink)">🌐</div>
+          <div style="font-family:var(--font-display);font-size:38px;line-height:1.1;">Meta</div>
+          <div class="body" style="font-size:25px;">Produit phare :<br><strong style="color:var(--coral)">Meta AI</strong> — Facebook, WhatsApp…</div>
+        </div>
+        <div class="card feature">
+          <div class="icon" style="background:var(--turquoise)">🐱</div>
+          <div style="font-family:var(--font-display);font-size:38px;line-height:1.1;">Mistral AI</div>
+          <div class="body" style="font-size:25px;">Produit phare :<br><strong style="color:var(--coral)">Le Chat</strong> — la pépite française.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 17 — ON ESSAIE ENSEMBLE ============ -->
+  <section class="slide bg-peach">
+    <svg class="deco" style="top:60px;left:80px;width:120px;height:120px;" viewBox="0 0 100 100" aria-hidden="true">
+      <path d="M50 6 L62 38 L96 40 L69 61 L79 95 L50 75 L21 95 L31 61 L4 40 L38 38 Z" fill="#F7C8D4" stroke="#2D2D2D" stroke-width="3" stroke-linejoin="round"/>
+    </svg>
+    <svg class="deco spin" style="bottom:-30px;right:60px;width:190px;height:190px;" viewBox="0 0 100 100" aria-hidden="true">
+      <g style="transform-origin:50px 50px"><g stroke="#2D2D2D" stroke-width="3" stroke-linecap="round">
+        <line x1="50" y1="5" x2="50" y2="19"/><line x1="50" y1="81" x2="50" y2="95"/><line x1="5" y1="50" x2="19" y2="50"/><line x1="81" y1="50" x2="95" y2="50"/>
+        <line x1="17" y1="17" x2="27" y2="27"/><line x1="73" y1="73" x2="83" y2="83"/><line x1="83" y1="17" x2="73" y2="27"/><line x1="27" y1="73" x2="17" y2="83"/></g>
+        <circle cx="50" cy="50" r="23" fill="#FDE68A" stroke="#2D2D2D" stroke-width="3"/></g>
+    </svg>
+    <div class="slide-content">
+      <h2 class="headline on-soft reveal d0" style="max-width:1400px;">On essaie ensemble ? 🙂</h2>
+      <div class="card card-lg reveal d1" style="margin-top:50px;max-width:1000px;">
+        <a href="https://chatgpt.com" target="_blank" rel="noopener" style="display:block;text-align:center;font-family:var(--font-display);font-size:64px;color:var(--coral);text-decoration:none;">💬 chatgpt.com</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SLIDE 16 — MERCI ============ -->
+  <section class="slide bg-cream">
+    <svg class="deco" style="top:-50px;left:-40px;width:260px;height:260px;" viewBox="0 0 120 120" aria-hidden="true">
+      <g transform="translate(60,60)" stroke="#2D2D2D" stroke-width="3" stroke-linejoin="round"><g fill="#FFFFFF">
+        <ellipse cx="0" cy="-34" rx="15" ry="26"/><ellipse cx="0" cy="34" rx="15" ry="26"/><ellipse cx="-34" cy="0" rx="26" ry="15"/><ellipse cx="34" cy="0" rx="26" ry="15"/>
+        <ellipse cx="-24" cy="-24" rx="15" ry="26" transform="rotate(45 -24 -24)"/><ellipse cx="24" cy="-24" rx="15" ry="26" transform="rotate(-45 24 -24)"/>
+        <ellipse cx="-24" cy="24" rx="15" ry="26" transform="rotate(-45 -24 24)"/><ellipse cx="24" cy="24" rx="15" ry="26" transform="rotate(45 24 24)"/></g>
+        <circle r="16" fill="#FDE68A"/></g>
+    </svg>
+    <svg class="deco" style="bottom:-40px;right:-30px;width:200px;height:110px;" viewBox="0 0 160 90" aria-hidden="true">
+      <g fill="none" stroke-width="11" stroke-linecap="round">
+        <path d="M16 84 a64 64 0 0 1 128 0" stroke="#F8635F"/><path d="M32 84 a48 48 0 0 1 96 0" stroke="#FDE68A"/>
+        <path d="M48 84 a32 32 0 0 1 64 0" stroke="#A8E6CF"/><path d="M64 84 a16 16 0 0 1 32 0" stroke="#A8D8F0"/></g>
+    </svg>
+    <div class="slide-content">
+      <h2 class="display reveal d0" style="text-align:center;">Merci 🌻</h2>
+      <p class="lead reveal d1" style="margin-top:40px;">Des questions ? On en discute tranquillement.</p>
+    </div>
+  </section>
+
+</main>
+</div>
+
+<!-- Chrome hors scène -->
+<div class="counter" id="counter">1 / 16</div>
+<nav class="navdots" id="navdots" aria-label="Navigation des diapositives"></nav>
+<div class="hint">← → pour naviguer</div>
+
+<!-- Édition en ligne -->
+<div class="edit-hotzone" id="editHotzone" title="Mode édition"></div>
+<button class="edit-toggle" id="editToggle" title="Mode édition (E)">✏️</button>
+
+<script>
+/* ===========================================
+   CONTRÔLEUR DE PRÉSENTATION
+   - Mise à l'échelle de la scène 1920×1080
+   - Navigation clavier / molette / tactile / points
+   =========================================== */
+class SlidePresentation{
+  constructor(){
+    this.slides=[...document.querySelectorAll('.slide')];
+    this.stage=document.getElementById('deckStage');
+    this.counter=document.getElementById('counter');
+    this.current=0;
+    this.buildDots();
+    this.scale();
+    window.addEventListener('resize',()=>this.scale());
+    this.bindKeys();
+    this.bindWheel();
+    this.bindTouch();
+    this.show(0);
+  }
+  scale(){
+    const f=Math.min(window.innerWidth/1920,window.innerHeight/1080);
+    const x=(window.innerWidth-1920*f)/2, y=(window.innerHeight-1080*f)/2;
+    this.stage.style.transform=`translate(${x}px,${y}px) scale(${f})`;
+  }
+  buildDots(){
+    const nav=document.getElementById('navdots');
+    this.slides.forEach((_,i)=>{
+      const b=document.createElement('button');
+      b.setAttribute('aria-label','Diapositive '+(i+1));
+      b.addEventListener('click',()=>this.show(i));
+      nav.appendChild(b);
+    });
+    this.dots=[...nav.children];
+  }
+  show(i){
+    this.current=Math.max(0,Math.min(i,this.slides.length-1));
+    this.slides.forEach((s,k)=>{
+      s.classList.toggle('active',k===this.current);
+      s.classList.toggle('visible',k===this.current);
+    });
+    this.dots.forEach((d,k)=>d.classList.toggle('on',k===this.current));
+    this.counter.textContent=(this.current+1)+' / '+this.slides.length;
+  }
+  next(){this.show(this.current+1);}
+  prev(){this.show(this.current-1);}
+  bindKeys(){
+    document.addEventListener('keydown',e=>{
+      if(e.target.getAttribute&&e.target.getAttribute('contenteditable')==='true')return;
+      if(['ArrowRight','ArrowDown',' ','PageDown'].includes(e.key)){e.preventDefault();this.next();}
+      else if(['ArrowLeft','ArrowUp','PageUp'].includes(e.key)){e.preventDefault();this.prev();}
+      else if(e.key==='Home'){this.show(0);}
+      else if(e.key==='End'){this.show(this.slides.length-1);}
+    });
+  }
+  bindWheel(){
+    let lock=false;
+    window.addEventListener('wheel',e=>{
+      if(lock)return; if(Math.abs(e.deltaY)<20)return;
+      lock=true; e.deltaY>0?this.next():this.prev();
+      setTimeout(()=>lock=false,650);
+    },{passive:true});
+  }
+  bindTouch(){
+    let x0=null,y0=null;
+    window.addEventListener('touchstart',e=>{x0=e.touches[0].clientX;y0=e.touches[0].clientY;},{passive:true});
+    window.addEventListener('touchend',e=>{
+      if(x0===null)return;
+      const dx=e.changedTouches[0].clientX-x0, dy=e.changedTouches[0].clientY-y0;
+      if(Math.max(Math.abs(dx),Math.abs(dy))>50){
+        (Math.abs(dx)>Math.abs(dy)? dx<0 : dy<0)?this.next():this.prev();
+      }
+      x0=y0=null;
+    },{passive:true});
+  }
+}
+const deck=new SlidePresentation();
+
+/* ===========================================
+   ÉDITION EN LIGNE (post-brouillon)
+   Survol coin haut-gauche ou touche E pour activer.
+   Cliquez un texte pour l'éditer. Ctrl+S pour enregistrer le fichier.
+   =========================================== */
+const editor={
+  isActive:false,
+  sel:'.display,.headline,.title,.subtitle,.lead,.body,.body-strong,.meta,.badge,.who,.txt,ul.dots li',
+  toggle(){
+    this.isActive=!this.isActive;
+    document.body.classList.toggle('editing',this.isActive);
+    document.getElementById('editToggle').classList.toggle('active',this.isActive);
+    document.querySelectorAll(this.sel).forEach(el=>{
+      el.setAttribute('contenteditable',this.isActive?'true':'false');
+    });
+  }
+};
+const editToggle=document.getElementById('editToggle');
+const hotzone=document.getElementById('editHotzone');
+let hideT=null;
+editToggle.addEventListener('click',()=>editor.toggle());
+hotzone.addEventListener('click',()=>editor.toggle());
+hotzone.addEventListener('mouseenter',()=>{clearTimeout(hideT);editToggle.classList.add('show');});
+hotzone.addEventListener('mouseleave',()=>{hideT=setTimeout(()=>{if(!editor.isActive)editToggle.classList.remove('show');},400);});
+editToggle.addEventListener('mouseenter',()=>clearTimeout(hideT));
+editToggle.addEventListener('mouseleave',()=>{hideT=setTimeout(()=>{if(!editor.isActive)editToggle.classList.remove('show');},400);});
+document.addEventListener('keydown',e=>{
+  if((e.key==='e'||e.key==='E')&&e.target.getAttribute&&e.target.getAttribute('contenteditable')!=='true'){editor.toggle();}
+  if((e.ctrlKey||e.metaKey)&&e.key==='s'){
+    e.preventDefault();
+    const html='<!DOCTYPE html>\n'+document.documentElement.outerHTML;
+    const blob=new Blob([html],{type:'text/html'});
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);a.download='presentation-ia.html';a.click();
+  }
+});
+</script>
+</body>
+</html>
